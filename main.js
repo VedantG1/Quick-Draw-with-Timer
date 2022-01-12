@@ -4,7 +4,76 @@ element = quick_draw_data_set[randomNo];
 document.getElementById("drawn").innerHTML = "Sketch To Be Drawn: " + element;
 console.log(element)
 timerCounter = 0;
-timer_Check = "";
+timerCheck = "";
 drawnSketch = "";
 answerHolder = "";
 score = 0;
+
+
+function preload() {
+    classifier = ml5.imageClassifier("DoodleNet")
+}
+
+function setup() {
+    canvas = createCanvas(300, 300)
+    canvas.center()
+    background("white")
+    canvas.mouseReleased(classifyCanvas)
+    synth = speechSynthesis
+}
+
+function draw() {
+    check()
+    if (drawnSketch == element) {
+        answerHolder = "set"
+        score += 1
+        document.getElementById("score").innerHTML = "Score : " + score
+    }
+    strokeWeight(13)
+    stroke(0)
+    if (mouseIsPressed) {
+        line(pmouseX, pmouseY, mouseX, mouseY)
+    }
+}
+
+function clearCanvas() {
+    background("white")
+}
+
+function check() {
+    timerCounter += 1
+    document.getElementById("timer").innerHTML = "Timer : " + timerCounter
+    if (timerCounter > 300) {
+        timerCounter = 0
+        timerCheck = "completed"
+        randomNo = Math.floor((Math.random() * quick_draw_data_set.length) + 1);
+        element = quick_draw_data_set[randomNo];
+        document.getElementById("drawn").innerHTML = "Sketch To Be Drawn: " + element;
+
+    }
+    if (timerCheck == "completed" || answerHolder == "set") {
+        timerCheck = ""
+        answerHolder = ""
+        randomNo = Math.floor((Math.random() * quick_draw_data_set.length) + 1);
+        element = quick_draw_data_set[randomNo];
+        document.getElementById("drawn").innerHTML = "Sketch To Be Drawn: " + element;
+        clearCanvas()
+    }
+}
+function classifyCanvas() {
+    classifier.classify(canvas, gotResult)
+}
+function gotResult(error, results) {
+    if (error) {
+        console.log(error)
+    }
+    else {
+        console.log(results)
+        drawnSketch = results[0].label
+        document.getElementById("label").innerHTML = "Label : " + results[0].label
+        document.getElementById("accuracy").innerHTML = "Accuracy : " + Math.round(results[0].confidence * 100) + "%"
+    }
+
+    utterThis = new SpeechSynthesisUtterance(drawnSketch)
+    synth.speak(utterThis)
+}
